@@ -129,11 +129,6 @@ const CountyMap = (() => {
 
   function setupTooltipEl() {
     tooltipEl = document.querySelector('.map-tooltip');
-    //if (!tooltipEl) {
-      //tooltipEl = document.createElement('div');
-      //tooltipEl.className = 'map-tooltip';
-      //document.body.appendChild(tooltipEl);
-    //}
   }
 
   function showTooltip(event, d) {
@@ -150,7 +145,7 @@ const CountyMap = (() => {
   }
   
   function moveTooltip(event) {
-    if (!tooltipEl) return;
+    if (!tooltipEl || screen.width <= 820) return;
     tooltipEl.style.left = (event.clientX + 14) + 'px';
     tooltipEl.style.top = (event.clientY + 14) + 'px';
   }
