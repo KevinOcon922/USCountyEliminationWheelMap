@@ -21,3 +21,5 @@ Clicking on the map reveals a side panel with information about each county, suc
 
 ## Implementation
 
+This web app uses the TopoJson Client and D3 JS libraries to render the map (found under assets) which is in TopoJson format.
+The modifications to Connecticut were done using mapshaper.org.
