@@ -137,12 +137,14 @@ const CountyMap = (() => {
   }
 
   function showTooltip(event, d) {
-    const elim = eliminations[d.fips];
-    tooltipEl.innerHTML =
-      '<span class="name">' + d.name + ', ' + d.state + '</span>' +
-      '<span class="status ' + (elim ? 'elim' : '') + '">' + (elim ? 'Eliminated' : 'Active') + '</span>';
-    tooltipEl.style.display = 'block';
-    moveTooltip(event);
+    if screen.width > 820 {
+      const elim = eliminations[d.fips];
+      tooltipEl.innerHTML =
+        '<span class="name">' + d.name + ', ' + d.state + '</span>' +
+        '<span class="status ' + (elim ? 'elim' : '') + '">' + (elim ? 'Eliminated' : 'Active') + '</span>';
+      tooltipEl.style.display = 'block';
+      moveTooltip(event);
+    }
   }
   function moveTooltip(event) {
     if (!tooltipEl) return;
