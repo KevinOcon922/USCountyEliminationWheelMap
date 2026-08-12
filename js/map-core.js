@@ -129,11 +129,11 @@ const CountyMap = (() => {
 
   function setupTooltipEl() {
     tooltipEl = document.querySelector('.map-tooltip');
-    if (!tooltipEl) {
-      tooltipEl = document.createElement('div');
-      tooltipEl.className = 'map-tooltip';
-      document.body.appendChild(tooltipEl);
-    }
+    //if (!tooltipEl) {
+      //tooltipEl = document.createElement('div');
+      //tooltipEl.className = 'map-tooltip';
+      //document.body.appendChild(tooltipEl);
+    //}
   }
 
   function showTooltip(event, d) {
