@@ -144,7 +144,8 @@ const CountyMap = (() => {
         '<span class="status ' + (elim ? 'elim' : '') + '">' + (elim ? 'Eliminated' : 'Active') + '</span>';
       tooltipEl.style.display = 'block';
       moveTooltip(event);
-    }
+    } else {
+      tooltipEl.style.display = 'none';
   }
   function moveTooltip(event) {
     if (!tooltipEl) return;
