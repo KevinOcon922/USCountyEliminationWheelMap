@@ -137,7 +137,7 @@ const CountyMap = (() => {
   }
 
   function showTooltip(event, d) {
-    if screen.width > 820 {
+    if(screen.width > 820) {
       const elim = eliminations[d.fips];
       tooltipEl.innerHTML =
         '<span class="name">' + d.name + ', ' + d.state + '</span>' +
