@@ -446,5 +446,5 @@ svg#map.grabbing { cursor: grabbing; }
   }
   .panel.open { transform: translateY(0); }
   .brand .tagline { display: none; }
-  .map-tooltip { display: none; }
+  .map-tooltip { display: none !important; }
 }
