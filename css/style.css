@@ -445,6 +445,6 @@ svg#map.grabbing { cursor: grabbing; }
     transform: translateY(100%);
   }
   .panel.open { transform: translateY(0); }
-  .brand .tagline { display: none; }
+  .brand h1 { font-size: 17px; }
   .map-tooltip { display: none !important; }
 }
