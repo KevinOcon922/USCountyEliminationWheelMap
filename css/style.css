@@ -257,7 +257,6 @@ svg#map.grabbing { cursor: grabbing; }
 .map-tooltip .status.elim { color: #ff9d97; }
 
 
-
 .panel {
   position: absolute;
   top: 0;
@@ -443,8 +442,9 @@ svg#map.grabbing { cursor: grabbing; }
     border-left: none;
     border-top: 1px solid var(--border);
     border-radius: 14px 14px 0 0;
-    transform: translateY(100%);
+    transform: translateY(120%);
   }
   .panel.open { transform: translateY(0); }
   .brand .tagline { display: none; }
+  .map-tooltip { display: none; }
 }
