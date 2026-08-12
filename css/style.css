@@ -438,7 +438,7 @@ svg#map.grabbing { cursor: grabbing; }
     position: fixed;
     left: 0; right: 0; bottom: 0;
     width: auto;
-    max-height: 72vh;
+    max-height: 100vh;
     border-left: none;
     border-top: 1px solid var(--border);
     border-radius: 14px 14px 0 0;
