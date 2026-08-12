@@ -146,12 +146,15 @@ const CountyMap = (() => {
       moveTooltip(event);
     } else {
       tooltipEl.style.display = 'none';
+    }
   }
+  
   function moveTooltip(event) {
     if (!tooltipEl) return;
     tooltipEl.style.left = (event.clientX + 14) + 'px';
     tooltipEl.style.top = (event.clientY + 14) + 'px';
   }
+  
   function hideTooltip() {
     if (tooltipEl) tooltipEl.style.display = 'none';
   }
