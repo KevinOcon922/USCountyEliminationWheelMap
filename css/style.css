@@ -442,7 +442,7 @@ svg#map.grabbing { cursor: grabbing; }
     border-left: none;
     border-top: 1px solid var(--border);
     border-radius: 14px 14px 0 0;
-    transform: translateY(120%);
+    transform: translateY(100%);
   }
   .panel.open { transform: translateY(0); }
   .brand .tagline { display: none; }
