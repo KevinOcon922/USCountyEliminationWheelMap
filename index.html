@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>County Elimination Map</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+  
+<body>
+
+<div class="map-app">
+  
+  <header class="app-header">
+    <div class="brand">
+      <h1>US County Elimination Wheel</h1>
+    </div>
+
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="Search for county" autocomplete="off">
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat remaining">
+        <div class="num" id="statRemaining">–</div>
+        <div class="stat-label">Remaining</div>
+      </div>
+      <div class="stat eliminated">
+        <div class="num" id="statEliminated">–</div>
+        <div class="stat-label">Eliminated</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="map-wrap" id="mapWrap">
+      <div class="overlay-msg" id="loadingMsg">
+        <div class="spinner"></div>
+        <div>Loading Map</div>
+      </div>
+    </div>
+
+    <aside class="panel" id="panel">
+      <div class="panel-inner">
+        <button class="panel-close" id="panelClose">×</button>
+        <div id="panelBody"></div>
+      </div>
+    </aside>
+  </div>
+  
+</div>
+
+<div class="map-tooltip"></div>
+  
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="js/map-core.js"></script>
+<script>
+(function () {
+  const panel = document.getElementById('panel');
+  const panelBody = document.getElementById('panelBody');
+  const loadingMsg = document.getElementById('loadingMsg');
+
+  function updateStats() {
+    const total = CountyMap.getFeatures().length;
+    const elim = Object.keys(CountyMap.getEliminations()).length;
+    document.getElementById('statRemaining').textContent = (total - elim).toLocaleString();
+    document.getElementById('statEliminated').textContent = elim.toLocaleString();
+  }
+
+  function renderPanel(record, elim) {
+    let html = '';
+    html += '<h2>' + record.name + '</h2>';
+    html += '<div class="state-line">' + record.state + '</div>';
+
+    if (elim) {
+      html += '<div class="status-pill elim">Eliminated</div>';
+      if (elim.day) {
+        html += '<div class="day-badge">Day ' + elim.day + '</div>';
+      }
+      html += '<div class="field-label">Date</div>';
+      html += '<div class="field-value">' + CountyMap.formatDate(elim.date) + '</div>';
+      if (elim.note) {
+        html += '<div class="field-label">Note</div>';
+        html += '<div class="note-box">' + escapeHtml(elim.note) + '</div>';
+      }
+    } else {
+      html += '<div class="status-pill active">Still In</div>';
+      html += '<div class="field-value" style="color: var(--text-dim);">This county hasn\'t been eliminated yet</div>';
+    }
+
+    panelBody.innerHTML = html;
+    panel.classList.add('open');
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  document.getElementById('panelClose').addEventListener('click', () => panel.classList.remove('open'));
+
+  // Search
+  const searchInput = document.getElementById('searchInput');
+  const searchResults = document.getElementById('searchResults');
+  searchInput.addEventListener('input', () => {
+    const results = CountyMap.search(searchInput.value);
+    if (!results.length) {
+      searchResults.innerHTML = searchInput.value.trim()
+        ? '<div class="empty">No counties match “' + searchInput.value + '”</div>' : '';
+      searchResults.classList.toggle('open', !!searchInput.value.trim());
+      return;
+    }
+    const elimMap = CountyMap.getEliminations();
+    searchResults.innerHTML = results.map(r => {
+      const isElim = !!elimMap[r.fips];
+      return '<button data-fips="' + r.fips + '">' +
+        '<span>' + r.name + ', ' + r.state + '</span>' +
+        '<span class="tag ' + (isElim ? 'elim' : 'active') + '">' + (isElim ? 'OUT' : 'IN') + '</span>' +
+        '</button>';
+    }).join('');
+    searchResults.classList.add('open');
+  });
+  searchResults.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-fips]');
+    if (!btn) return;
+    const fips = btn.getAttribute('data-fips');
+    CountyMap.zoomToFips(fips);
+    CountyMap.selectCounty(fips);
+    searchResults.classList.remove('open');
+    searchInput.value = '';
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-wrap')) searchResults.classList.remove('open');
+  });
+
+  // Init
+  CountyMap.init('#mapWrap', {
+    onCountyClick: (record, elim) => renderPanel(record, elim)
+  }).then(() => {
+    loadingMsg.remove();
+    updateStats();
+  }).catch(err => {
+    loadingMsg.classList.add('error');
+    loadingMsg.innerHTML = '<div>Couldn\'t load the map.</div><div style="font-size:12px;">' + err.message + '</div>';
+    console.error(err);
+  });
+})();
+</script>
+</body>
+</html>

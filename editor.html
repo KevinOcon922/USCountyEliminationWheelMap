@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>County Elimination — Editor</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="map-app">
+  <header class="app-header">
+    <div class="brand">
+      <h1>US County Elimination Wheel</h1>
+      <span class="mode-badge">Editor Mode</span>
+    </div>
+
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="Search for county" autocomplete="off">
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat remaining">
+        <div class="num" id="statRemaining">–</div>
+        <div class="stat-label">Remaining</div>
+      </div>
+      <div class="stat eliminated">
+        <div class="num" id="statEliminated">–</div>
+        <div class="stat-label">Eliminated</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="map-wrap" id="mapWrap">
+      <div class="overlay-msg" id="loadingMsg">
+        <div class="spinner"></div>
+        <div>Loading Map</div>
+      </div>
+    </div>
+
+    <aside class="panel" id="panel">
+      <div class="panel-inner">
+        <button class="panel-close" id="panelClose">×</button>
+        <div id="panelBody"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="map-tooltip"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="js/map-core.js"></script>
+<script>
+(function () {
+  const panel = document.getElementById('panel');
+  const panelBody = document.getElementById('panelBody');
+  const loadingMsg = document.getElementById('loadingMsg');
+  let workingEliminations = {};
+
+  function updateStats() {
+    const total = CountyMap.getFeatures().length;
+    const elim = Object.keys(workingEliminations).length;
+    document.getElementById('statRemaining').textContent = (total - elim).toLocaleString();
+    document.getElementById('statEliminated').textContent = elim.toLocaleString();
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function exportJSON() {
+    const sorted = {};
+    Object.keys(workingEliminations).sort().forEach(k => { sorted[k] = workingEliminations[k]; });
+    return JSON.stringify(sorted, null, 2);
+  }
+
+  function renderExportSection() {
+    return (
+      '<div class="divider"></div>' +
+      '<div class="field-label">Updated data/eliminations.json</div>' +
+      '<div class="export-box"><textarea id="exportBox" readonly></textarea></div>' +
+      '<div class="export-actions">' +
+        '<button class="btn btn-secondary" id="copyJsonBtn">Copy</button>' +
+        '<button class="btn btn-secondary" id="downloadJsonBtn">Download</button>' +
+      '</div>'
+    );
+  }
+
+  function wireExportSection() {
+    const box = document.getElementById('exportBox');
+    box.value = exportJSON();
+    document.getElementById('copyJsonBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(box.value).then(() => {
+        const b = document.getElementById('copyJsonBtn');
+        b.textContent = 'Copied!';
+        setTimeout(() => { b.textContent = 'Copy'; }, 1200);
+      });
+    });
+    document.getElementById('downloadJsonBtn').addEventListener('click', () => {
+      const blob = new Blob([box.value], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'eliminations.json';
+      a.click();
+    });
+  }
+
+  function renderAddForm(record) {
+    let html = '';
+    html += '<h2>' + record.name + '</h2>';
+    html += '<div class="state-line">' + record.state + '</div>';
+    html += '<div class="status-pill active">Still standing</div>';
+
+    html += '<div class="form-row">' +
+      '<label for="fDate">Elimination date</label>' +
+      '<input type="date" id="fDate" value="' + CountyMap.todayLocalISO() + '">' +
+      '</div>';
+    html += '<div class="form-row">' +
+      '<label for="fNote">Note (optional)</label>' +
+      '<textarea id="fNote" placeholder="ex: First elimination"></textarea>' +
+      '</div>';
+    html += '<div class="form-row">' +
+      '<label for="fDay">Day </label>' +
+      '<textarea id="fDay" placeholder="ex: 1"></textarea>' +
+      '</div>';
+    html += '<button class="btn btn-primary" id="addBtn">Mark eliminated</button>';
+
+    html += renderExportSection();
+    panelBody.innerHTML = html;
+    panel.classList.add('open');
+    wireExportSection();
+
+    document.getElementById('addBtn').addEventListener('click', () => {
+      const date = document.getElementById('fDate').value || CountyMap.todayLocalISO();
+      const note = document.getElementById('fNote').value.trim();
+      const day = document.getElementById('fDay').value.trim();
+      workingEliminations[record.fips] = {
+        name: record.name,
+        state: record.state,
+        date: date,
+        note: note,
+        day: day
+      };
+      CountyMap.setEliminations(workingEliminations);
+      updateStats();
+      renderRemovePanel(record);
+    });
+  }
+
+  function renderRemovePanel(record) {
+    const elim = workingEliminations[record.fips];
+    let html = '';
+    html += '<h2>' + record.name + '</h2>';
+    html += '<div class="state-line">' + record.state + '</div>';
+    html += '<div class="status-pill elim">Eliminated</div>';
+    if (elim.day) {
+      html += '<div class="day-badge">Day ' + elim.day + '</div>';
+    }
+    html += '<div class="field-label">Date</div><div class="field-value">' + CountyMap.formatDate(elim.date) + '</div>';
+    if (elim.note) {
+      html += '<div class="field-label">Note</div><div class="note-box">' + escapeHtml(elim.note) + '</div>';
+    }
+    html += '<button class="btn btn-danger" id="removeBtn" style="margin-top:16px;">Remove elimination</button>';
+    html += renderExportSection();
+
+    panelBody.innerHTML = html;
+    panel.classList.add('open');
+    wireExportSection();
+
+    document.getElementById('removeBtn').addEventListener('click', () => {
+      delete workingEliminations[record.fips];
+      CountyMap.setEliminations(workingEliminations);
+      updateStats();
+      renderAddForm(record);
+    });
+  }
+
+  function handleClick(record, elim) {
+    if (elim) renderRemovePanel(record);
+    else renderAddForm(record);
+  }
+
+  document.getElementById('panelClose').addEventListener('click', () => panel.classList.remove('open'));
+
+  // Search
+  const searchInput = document.getElementById('searchInput');
+  const searchResults = document.getElementById('searchResults');
+  searchInput.addEventListener('input', () => {
+    const results = CountyMap.search(searchInput.value);
+    if (!results.length) {
+      searchResults.innerHTML = searchInput.value.trim()
+        ? '<div class="empty">No counties match “' + searchInput.value + '”</div>' : '';
+      searchResults.classList.toggle('open', !!searchInput.value.trim());
+      return;
+    }
+    searchResults.innerHTML = results.map(r => {
+      const isElim = !!workingEliminations[r.fips];
+      return '<button data-fips="' + r.fips + '">' +
+        '<span>' + r.name + ', ' + r.state + '</span>' +
+        '<span class="tag ' + (isElim ? 'elim' : 'active') + '">' + (isElim ? 'OUT' : 'IN') + '</span>' +
+        '</button>';
+    }).join('');
+    searchResults.classList.add('open');
+  });
+  searchResults.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-fips]');
+    if (!btn) return;
+    const fips = btn.getAttribute('data-fips');
+    CountyMap.zoomToFips(fips);
+    CountyMap.selectCounty(fips);
+    searchResults.classList.remove('open');
+    searchInput.value = '';
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-wrap')) searchResults.classList.remove('open');
+  });
+
+  // Init
+  CountyMap.init('#mapWrap', { onCountyClick: handleClick }).then(() => {
+    loadingMsg.remove();
+    workingEliminations = Object.assign({}, CountyMap.getEliminations());
+    updateStats();
+  }).catch(err => {
+    loadingMsg.classList.add('error');
+    loadingMsg.innerHTML = '<div>Couldn\'t load the map.</div><div style="font-size:12px;">' + err.message + '</div>';
+    console.error(err);
+  });
+})();
+</script>
+</body>
+</html>
